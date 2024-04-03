@@ -6,6 +6,7 @@ import com.beikei.pro.easyexcel.entity.PageResult;
 import com.beikei.pro.easyexcel.transform.GoodsExcel;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -14,9 +15,10 @@ import java.util.function.Supplier;
 public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
 
     @Override
-    public boolean async(List<GoodsExcel> batch) {
+    public Consumer<List<GoodsExcel>> sync2Db() {
+        return (data)->{
 
-        return false;
+        };
     }
 
     @Override

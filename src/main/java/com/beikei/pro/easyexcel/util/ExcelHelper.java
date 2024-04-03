@@ -29,6 +29,11 @@ public class ExcelHelper {
         read0(file, excelEnum.getTransform(), excelEnum.getListener());
     }
 
+    public void write(File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper) {
+        ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
+        write0("sheet1",file,excelEnum.getTransform(),(Class<IExcelHandler>)excelEnum.getHandler(),queryWrapper);
+    }
+
     private void read0(MultipartFile file, Class transform, Class readListener) {
         try {
             ReadListener listener = (ReadListener) readListener.getDeclaredConstructor().newInstance();
@@ -38,11 +43,6 @@ public class ExcelHelper {
             log.error("======= read error!=========");
             throw new RuntimeException(e);
         }
-    }
-
-    public void write(File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper) {
-        ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
-        write0("sheet1",file,excelEnum.getTransform(),(Class<IExcelHandler>)excelEnum.getHandler(),queryWrapper);
     }
 
     private void write0(String sheetName, File file, Class transform, Class<IExcelHandler> handler, @Nullable LambdaQueryWrapper queryWrapper) {
