@@ -7,8 +7,8 @@
         <version>2.7.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.chuhq.demo</groupId>
-    <artifactId>easyexcel</artifactId>
+    <groupId>com.beikei.pro</groupId>
+    <artifactId>easyexcel-helper</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -17,7 +17,7 @@
         <spring.boot.version>2.7.4</spring.boot.version>
         <common-lang3>3.12.0</common-lang3>
         <mysql-connect-java>8.0.30</mysql-connect-java>
-        <mybatis-plus>3.5.2</mybatis-plus>
+        <mybatis-plus>3.5.3</mybatis-plus>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
@@ -68,6 +68,11 @@
             <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>${mybatis-plus}</version>
+        </dependency>
+        <dependency>
             <groupId>net.sf.json-lib</groupId>
             <artifactId>json-lib</artifactId>
             <version>2.4</version>
@@ -111,7 +116,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.chuhq.demo.easyexcel.Application</mainClass>
+                    <mainClass>com.beikei.pro.easyexcel.Application</mainClass>
                 </configuration>
             </plugin>
         </plugins>

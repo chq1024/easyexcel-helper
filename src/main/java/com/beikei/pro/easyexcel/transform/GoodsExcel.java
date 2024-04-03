@@ -1,4 +1,4 @@
-package com.chuhq.demo.easyexcel.entity;
+package com.beikei.pro.easyexcel.transform;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.chuhq.demo.easyexcel;
+package com.beikei.pro.easyexcel;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
