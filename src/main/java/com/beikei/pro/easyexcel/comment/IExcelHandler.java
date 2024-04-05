@@ -14,6 +14,12 @@ import java.util.function.Supplier;
  */
 public interface IExcelHandler<T> {
 
+    /**
+     * 获取单例
+     * @return
+     */
+    IExcelHandler<T> getInstance();
+
     Consumer<List<T>> sync2Db();
 
     /**

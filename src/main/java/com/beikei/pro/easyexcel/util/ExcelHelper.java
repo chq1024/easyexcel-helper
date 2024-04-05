@@ -13,6 +13,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
 /**
  * excel工具类，用于简单的read,write
@@ -26,7 +27,7 @@ public class ExcelHelper {
 
     public void read(MultipartFile file, String uniqueName) {
         ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
-        read0(file, excelEnum.getTransform(), excelEnum.getListener());
+        read0(file, excelEnum.getTransform(), excelEnum.getListener(),excelEnum.getHandler());
     }
 
     public void write(File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper) {
@@ -34,9 +35,11 @@ public class ExcelHelper {
         write0("sheet1",file,excelEnum.getTransform(),(Class<IExcelHandler>)excelEnum.getHandler(),queryWrapper);
     }
 
-    private void read0(MultipartFile file, Class transform, Class readListener) {
+    private void read0(MultipartFile file, Class transform, Class readListener,Class excelHandler) {
         try {
-            ReadListener listener = (ReadListener) readListener.getDeclaredConstructor().newInstance();
+            Method getInstance = excelHandler.getMethod("getInstance");
+            IExcelHandler excelHandlerInstance = (IExcelHandler) getInstance.invoke(excelHandler);
+            ReadListener listener = (ReadListener) readListener.getDeclaredConstructor(excelHandler).newInstance(excelHandlerInstance);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), transform, listener);
             read.sheet().doRead();
         } catch (Exception e) {

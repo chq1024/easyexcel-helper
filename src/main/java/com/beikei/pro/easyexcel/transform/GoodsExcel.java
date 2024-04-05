@@ -11,4 +11,8 @@ import java.io.Serializable;
 @Getter
 @Setter
 public class GoodsExcel implements Serializable {
+
+    private String gid;
+    private String name;
+
 }

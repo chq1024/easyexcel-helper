@@ -12,8 +12,9 @@ import java.util.List;
 @Setter
 public class PageResult<T> {
 
-    private Integer page;
+    private Long page;
     private Integer size;
-    private Integer count;
+    private Long count;
     private List<T> data;
+    private Long pageCount;
 }
