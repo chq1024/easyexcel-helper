@@ -28,8 +28,8 @@ public class GoodsReadListener extends IReadListener<GoodsExcel> {
     @Override
     public void invoke(GoodsExcel data, AnalysisContext context) {
         cacheAnalysedData.add(data);
-        if (cacheAnalysedData.size() >= 100) {
-            boolean batchSync = excelHandler.sync(cacheAnalysedData);
+        if (cacheAnalysedData.size() >= 20) {
+            boolean batchSync = excelHandler.async(cacheAnalysedData,10);
             if (batchSync) {
 //                cacheAnalysedData = ListUtils.newArrayListWithCapacity(100);
                 cacheAnalysedData.clear();

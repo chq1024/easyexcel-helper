@@ -42,7 +42,6 @@ public class ExcelHelper {
 
     private static void read0(MultipartFile file, Class transform, Class readListener, Class excelHandler) {
         try {
-
             IExcelHandler excelHandlerInstance = handlerSingerInstance(excelHandler);
             ReadListener listener = (ReadListener) readListener.getDeclaredConstructor(IExcelHandler.class).newInstance(excelHandlerInstance);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), transform, listener);

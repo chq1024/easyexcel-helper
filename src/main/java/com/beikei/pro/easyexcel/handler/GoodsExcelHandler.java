@@ -10,6 +10,8 @@ import com.beikei.pro.easyexcel.util.SpringUtils;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -45,7 +47,11 @@ public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
     public Consumer<List<GoodsExcel>> sync2Db() {
         return (data)->{
             for (GoodsExcel datum : data) {
-                goodsMapper.insert(datum);
+                try {
+                    goodsMapper.insert(datum);
+                } catch (Exception e) {
+                    // todo 需要处理
+                }
             }
         };
     }
