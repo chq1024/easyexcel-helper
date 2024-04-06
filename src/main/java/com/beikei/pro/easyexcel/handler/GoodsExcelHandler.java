@@ -9,6 +9,7 @@ import com.beikei.pro.easyexcel.transform.GoodsExcel;
 import com.beikei.pro.easyexcel.util.SpringUtils;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
@@ -50,7 +51,9 @@ public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
                 try {
                     goodsMapper.insert(datum);
                 } catch (Exception e) {
-                    // todo 需要处理
+                    if (!(e instanceof DuplicateKeyException)) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         };
