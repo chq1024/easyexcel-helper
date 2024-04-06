@@ -3,17 +3,17 @@ server:
   #    enabled: true
   #    min-response-size: 2KB
   #    mime-types: "application/json"
-  port: 20002
+  port: 20003
   servlet:
     context-path: /
 spring:
   application:
-    name: easyexcel-demo
+    name: easyexcel-helper
   datasource:
-    url: jdbc:mysql://localhost:3306/xxx?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2B8&serverTimezone=GMT%2B8
+    url: jdbc:mysql://localhost:3306/easyexcel_helper?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2B8&serverTimezone=GMT%2B8
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: xx
-    password: xx
+    username: root
+    password: root
     hikari:
       minimum-idle: 5
       maximum-pool-size: 10
@@ -21,19 +21,6 @@ spring:
       idle-timeout: 20000
       auto-commit: true
     type: com.zaxxer.hikari.HikariDataSource
-  redis:
-    host: ${redis_host:localhost}
-    port: ${redis_port:6379}
-    password: ${redis_password:}
-    database: 1
-    lettuce:
-      pool:
-        max-idle: 8
-        min-idle: 0
-        max-active: 8
-        max-wait: -1ms
-      shutdown-timeout: 10000ms
-    timeout: 60000ms
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
@@ -42,3 +29,5 @@ logging:
   level:
     com.h7culture.manage: debug
 
+mybatis-plus:
+  type-aliases-package: com.beikei.pro.easyexcel.transform

@@ -1,16 +1,25 @@
 package com.beikei.pro.easyexcel.util;
 
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.stereotype.Component;
 
-public class SpringUtils implements ApplicationContextInitializer<ConfigurableApplicationContext>{
+/**
+ * @author beikei
+ */
+@Component
+public class SpringUtils implements ApplicationContextAware {
 
     private static ApplicationContext context = null;
+
     @Override
-    public void initialize(ConfigurableApplicationContext  applicationContext) {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
+
 
     public static  <T> T getBean(Class<T> clazz) {
         return context.getBean(clazz);
@@ -19,7 +28,6 @@ public class SpringUtils implements ApplicationContextInitializer<ConfigurableAp
     public static <T> T getBean(String name,Class<T> clazz) {
         return context.getBean(name,clazz);
     }
-
 
 
 }

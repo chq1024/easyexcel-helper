@@ -51,8 +51,7 @@ public interface IExcelHandler<T> {
             long count = count(queryWrapper);
             List<T> arr = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                PageResult<T> pageResult = pageQuery(i, 20, queryWrapper).get();
-                arr.addAll(pageResult.getData());
+                arr.addAll(pageQuery(i, 20, queryWrapper).get());
             }
             return arr;
         };
@@ -62,7 +61,7 @@ public interface IExcelHandler<T> {
      * 分页获取数据
      * @return
      */
-    Supplier<PageResult<T>> pageQuery(long page,int size,LambdaQueryWrapper<T> queryWrapper);
+    Supplier<List<T>> pageQuery(long page, int size, LambdaQueryWrapper<T> queryWrapper);
 
     /**
      * 查询总数（用于分页查询前操作）

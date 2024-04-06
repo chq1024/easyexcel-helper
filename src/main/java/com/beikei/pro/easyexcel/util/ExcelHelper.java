@@ -13,10 +13,13 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * excel工具类，用于简单的read,write
+ *
  * @author bk
  */
 @SuppressWarnings("all")
@@ -25,21 +28,23 @@ public class ExcelHelper {
 
     private static int PATE_SIZE = 20;
 
-    public void read(MultipartFile file, String uniqueName) {
+    private static ConcurrentHashMap<Class, Object> cacheHandleMap = new ConcurrentHashMap<>();
+
+    public static void read(MultipartFile file, String uniqueName) {
         ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
-        read0(file, excelEnum.getTransform(), excelEnum.getListener(),excelEnum.getHandler());
+        read0(file, excelEnum.getTransform(), excelEnum.getListener(), excelEnum.getHandler());
     }
 
-    public void write(File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper) {
+    public static void write(File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper) {
         ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
-        write0("sheet1",file,excelEnum.getTransform(),(Class<IExcelHandler>)excelEnum.getHandler(),queryWrapper);
+        write0("sheet1", file, excelEnum.getTransform(), excelEnum.getHandler(), queryWrapper);
     }
 
-    private void read0(MultipartFile file, Class transform, Class readListener,Class excelHandler) {
+    private static void read0(MultipartFile file, Class transform, Class readListener, Class excelHandler) {
         try {
-            Method getInstance = excelHandler.getMethod("getInstance");
-            IExcelHandler excelHandlerInstance = (IExcelHandler) getInstance.invoke(excelHandler);
-            ReadListener listener = (ReadListener) readListener.getDeclaredConstructor(excelHandler).newInstance(excelHandlerInstance);
+
+            IExcelHandler excelHandlerInstance = handlerSingerInstance(excelHandler);
+            ReadListener listener = (ReadListener) readListener.getDeclaredConstructor(IExcelHandler.class).newInstance(excelHandlerInstance);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), transform, listener);
             read.sheet().doRead();
         } catch (Exception e) {
@@ -48,11 +53,11 @@ public class ExcelHelper {
         }
     }
 
-    private void write0(String sheetName, File file, Class transform, Class<IExcelHandler> handler, @Nullable LambdaQueryWrapper queryWrapper) {
+    private static void write0(String sheetName, File file, Class transform, Class excelHandler, @Nullable LambdaQueryWrapper queryWrapper) {
         try (ExcelWriter excelWriter = EasyExcel.write(file, transform).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet(sheetName).build();
             // 读取数据
-            IExcelHandler handlerInstance = handler.getDeclaredConstructor().newInstance();
+            IExcelHandler handlerInstance = handlerSingerInstance(excelHandler);
             long count = handlerInstance.count(queryWrapper);
             long pageNum = count % PATE_SIZE == 0 ? count % PATE_SIZE : (count % PATE_SIZE) + 1;
             for (long i = 0; i < pageNum; i++) {
@@ -62,5 +67,23 @@ public class ExcelHelper {
             log.error("======= write error!=========");
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+
+    private static IExcelHandler handlerSingerInstance(Class excelHandler) {
+        boolean containsHandler = cacheHandleMap.containsKey(excelHandler);
+        if (!containsHandler) {
+            try {
+                Constructor constructor = excelHandler.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                Object nullFieldInstance = constructor.newInstance();
+                Method getInstance = excelHandler.getDeclaredMethod("getInstance");
+                IExcelHandler excelHandlerInstance = (IExcelHandler) getInstance.invoke(nullFieldInstance);
+                cacheHandleMap.put(excelHandler, excelHandlerInstance);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return (IExcelHandler) cacheHandleMap.get(excelHandler);
     }
 }

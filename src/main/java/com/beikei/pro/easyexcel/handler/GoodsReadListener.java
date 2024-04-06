@@ -21,7 +21,7 @@ public class GoodsReadListener extends IReadListener<GoodsExcel> {
 
     private final IExcelHandler<GoodsExcel> excelHandler;
 
-    GoodsReadListener(IExcelHandler<GoodsExcel> excelHandler) {
+    public GoodsReadListener(IExcelHandler<GoodsExcel> excelHandler) {
         this.excelHandler = excelHandler;
     }
 
@@ -29,7 +29,7 @@ public class GoodsReadListener extends IReadListener<GoodsExcel> {
     public void invoke(GoodsExcel data, AnalysisContext context) {
         cacheAnalysedData.add(data);
         if (cacheAnalysedData.size() >= 100) {
-            boolean batchSync = excelHandler.async(cacheAnalysedData);
+            boolean batchSync = excelHandler.sync(cacheAnalysedData);
             if (batchSync) {
 //                cacheAnalysedData = ListUtils.newArrayListWithCapacity(100);
                 cacheAnalysedData.clear();
@@ -40,7 +40,7 @@ public class GoodsReadListener extends IReadListener<GoodsExcel> {
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
         if (!cacheAnalysedData.isEmpty()) {
-            excelHandler.async(cacheAnalysedData);
+            excelHandler.sync(cacheAnalysedData);
         }
         log.info("========= curr finished read =========");
     }
