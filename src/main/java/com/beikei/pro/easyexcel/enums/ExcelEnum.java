@@ -2,7 +2,7 @@ package com.beikei.pro.easyexcel.enums;
 
 import com.beikei.pro.easyexcel.handler.GoodsExcelHandler;
 import com.beikei.pro.easyexcel.handler.GoodsReadListener;
-import com.beikei.pro.easyexcel.transform.GoodsExcel;
+import com.beikei.pro.easyexcel.handler.transform.GoodsExcel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

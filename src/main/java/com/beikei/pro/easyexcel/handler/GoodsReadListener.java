@@ -3,7 +3,7 @@ package com.beikei.pro.easyexcel.handler;
 import com.alibaba.excel.context.AnalysisContext;
 import com.beikei.pro.easyexcel.comment.IExcelHandler;
 import com.beikei.pro.easyexcel.comment.IReadListener;
-import com.beikei.pro.easyexcel.transform.GoodsExcel;
+import com.beikei.pro.easyexcel.handler.transform.GoodsExcel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;

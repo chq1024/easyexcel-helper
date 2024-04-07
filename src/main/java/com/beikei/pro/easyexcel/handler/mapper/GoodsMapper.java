@@ -1,7 +1,7 @@
 package com.beikei.pro.easyexcel.handler.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.beikei.pro.easyexcel.transform.GoodsExcel;
+import com.beikei.pro.easyexcel.handler.transform.GoodsExcel;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

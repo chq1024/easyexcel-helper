@@ -1,19 +1,21 @@
 package com.beikei.pro.easyexcel.handler;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.beikei.pro.easyexcel.comment.IExcelHandler;
-import com.beikei.pro.easyexcel.entity.PageResult;
 import com.beikei.pro.easyexcel.handler.mapper.GoodsMapper;
-import com.beikei.pro.easyexcel.transform.GoodsExcel;
+import com.beikei.pro.easyexcel.handler.transform.GoodsExcel;
 import com.beikei.pro.easyexcel.util.SpringUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -22,6 +24,7 @@ import java.util.function.Supplier;
  */
 @Getter
 @Setter
+@Slf4j
 public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
 
     private GoodsExcelHandler instance;
@@ -50,21 +53,20 @@ public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
             for (GoodsExcel datum : data) {
                 try {
                     goodsMapper.insert(datum);
-                } catch (Exception e) {
-                    if (!(e instanceof DuplicateKeyException)) {
-                        throw new RuntimeException(e);
-                    }
+                } catch (DuplicateKeyException e) {
+                    log.warn("重复键异常，Tab:goods_excel,Err:" + e.getMessage());
                 }
             }
         };
     }
 
     @Override
-    public Supplier<List<GoodsExcel>> pageQuery(long page, int size, LambdaQueryWrapper<GoodsExcel> queryWrapper) {
+    public Supplier<List<GoodsExcel>> pageQuery(long page, long size, LambdaQueryWrapper<GoodsExcel> queryWrapper,List<OrderItem> orderItems) {
         return ()-> {
-            PageDTO<GoodsExcel> queryPage = new PageDTO<>(page,size);
-            queryPage = goodsMapper.selectPage(queryPage, queryWrapper);
-            return queryPage.getRecords();
+            Page<GoodsExcel> pageQuery = PageDTO.of(page + 1, size);
+            pageQuery.setOrders(Optional.ofNullable(orderItems).orElse(new ArrayList<>()));
+            pageQuery = goodsMapper.selectPage(pageQuery, queryWrapper);
+            return pageQuery.getRecords();
         };
     }
 

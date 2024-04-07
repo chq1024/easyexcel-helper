@@ -38,8 +38,6 @@ public class ThreadHelper {
 
     @PreDestroy
     public void destroy() {
-        if (executor != null) {
-            executor.shutdown();
-        }
+        executor.shutdown();
     }
 }
