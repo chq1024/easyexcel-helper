@@ -3,11 +3,11 @@ package com.beikei.pro.easyexcel.util;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.read.builder.ExcelReaderBuilder;
-import com.alibaba.excel.read.listener.ReadListener;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.beikei.pro.easyexcel.comment.IExcelHandler;
+import com.beikei.pro.easyexcel.comment.IReadListener;
 import com.beikei.pro.easyexcel.enums.ExcelEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * excel工具类，用于简单的read,write
- *
+ * 支持数据量较大时多sheet写入
  * @author bk
  */
 @SuppressWarnings("all")
@@ -35,8 +35,8 @@ public class ExcelHelper {
     private static ConcurrentHashMap<Class, Object> cacheHandleMap = new ConcurrentHashMap<>();
 
     public static void read(MultipartFile file, String uniqueName) {
-        ExcelEnum excelEnum = com.beikei.pro.easyexcel.enums.ExcelEnum.valueOfUniqueName(uniqueName);
-        read0(file, excelEnum.getTransform(), excelEnum.getListener(), excelEnum.getHandler());
+        ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
+        read0(file, excelEnum);
     }
 
     public static void write(File file, String unqiueName) {
@@ -53,11 +53,11 @@ public class ExcelHelper {
         write0(sheetSize,file,excelEnum,queryWrapper,orderItems);
     }
 
-    private static void read0(MultipartFile file, Class transform, Class readListener, Class excelHandler) {
+    private static void read0(MultipartFile file, ExcelEnum excelEnum) {
         try {
-            IExcelHandler excelHandlerInstance = handlerSingerInstance(excelHandler);
-            ReadListener listener = (ReadListener) readListener.getDeclaredConstructor(IExcelHandler.class).newInstance(excelHandlerInstance);
-            ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), transform, listener);
+            IExcelHandler excelHandlerInstance = handlerSingerInstance(excelEnum.getHandler());
+            IReadListener listener = (IReadListener) excelEnum.getListener().getDeclaredConstructor(IExcelHandler.class).newInstance(excelHandlerInstance);
+            ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), excelEnum.getTransform(), listener);
             read.sheet().doRead();
         } catch (Exception e) {
             log.error("======= read error!=========");
@@ -86,7 +86,7 @@ public class ExcelHelper {
             IExcelHandler handlerInstance = handlerSingerInstance(excelEnum.getHandler());
             long count = handlerInstance.count(queryWrapper);
             long sheetNum = count % sheetSize == 0 ? count / sheetSize : (count / sheetSize) + 1;
-            for (int i = 0; i < sheetNum; i++) {
+            for (int i = 1; i <= sheetNum; i++) {
                 WriteSheet writeSheet = EasyExcel.writerSheet(i).build();
                 if (sheetSize <= DEFAULT_SHEET_SIZE_LIMIT) {
                     excelWriter.write(handlerInstance.pageQuery(i, sheetSize, queryWrapper, orderItems), writeSheet);

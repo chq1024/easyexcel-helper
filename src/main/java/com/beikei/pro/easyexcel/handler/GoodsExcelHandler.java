@@ -37,10 +37,10 @@ public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
         if (instance == null) {
             synchronized (GoodsExcelHandler.class) {
                 if (instance == null) {
+                    GoodsMapper mapper = SpringUtils.getBean(GoodsMapper.class);
                     instance = new GoodsExcelHandler();
-                    goodsMapper = SpringUtils.getBean(GoodsMapper.class);
+                    instance.setGoodsMapper(mapper);
                     instance.setInstance(this);
-                    instance.setGoodsMapper(goodsMapper);
                 }
             }
         }
@@ -62,9 +62,11 @@ public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
 
     @Override
     public Supplier<List<GoodsExcel>> pageQuery(long page, long size, LambdaQueryWrapper<GoodsExcel> queryWrapper,List<OrderItem> orderItems) {
-        return ()-> {
-            Page<GoodsExcel> pageQuery = PageDTO.of(page + 1, size);
+        return ()->{
+            Page<GoodsExcel> pageQuery = PageDTO.of(page, size);
             pageQuery.setOrders(Optional.ofNullable(orderItems).orElse(new ArrayList<>()));
+            // 外层已有查询总数，本次查询关注数据
+            pageQuery.setSearchCount(false);
             pageQuery = goodsMapper.selectPage(pageQuery, queryWrapper);
             return pageQuery.getRecords();
         };

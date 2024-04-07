@@ -6,6 +6,7 @@ import com.alibaba.excel.read.listener.ReadListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * read监听抽象类，统一处理exception
  * @author bk
  */
 @Slf4j

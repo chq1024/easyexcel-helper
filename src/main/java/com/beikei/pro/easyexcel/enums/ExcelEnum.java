@@ -9,6 +9,7 @@ import lombok.Getter;
 import java.util.Arrays;
 
 /**
+ * 用枚举的表示方法来实现抽象
  * @author bk
  */
 @Getter
