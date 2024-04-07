@@ -27,12 +27,13 @@ import java.util.function.Supplier;
 @Slf4j
 public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
 
-    private GoodsExcelHandler instance;
+    private volatile GoodsExcelHandler instance;
 
     private GoodsMapper goodsMapper;
 
     private GoodsExcelHandler() {}
 
+    @Override
     public GoodsExcelHandler getInstance() {
         if (instance == null) {
             synchronized (GoodsExcelHandler.class) {
