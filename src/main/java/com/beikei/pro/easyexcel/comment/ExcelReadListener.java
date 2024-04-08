@@ -5,13 +5,43 @@ import com.alibaba.excel.exception.ExcelDataConvertException;
 import com.alibaba.excel.read.listener.ReadListener;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * read监听抽象类，统一处理exception
  * @author bk
  */
 @Slf4j
-public abstract class IReadListener<T> implements ReadListener<T> {
+public class ExcelReadListener implements ReadListener<Dict> {
 
+    private final int DEFAULT_CACHE_SIZE = 20;
+
+    private final List<Dict> cache = new ArrayList<>(DEFAULT_CACHE_SIZE);
+
+    @Override
+    public void invoke(Dict data, AnalysisContext context) {
+        cache.add(data);
+        if (cache.size() >= DEFAULT_CACHE_SIZE) {
+            ExcelHandler handler = ExcelHandler.getInstance();
+            boolean synced = handler.sync(cache);
+            if (synced) {
+                cache.clear();
+            }
+        }
+    }
+
+    @Override
+    public void doAfterAllAnalysed(AnalysisContext context) {
+        if (!cache.isEmpty()) {
+            ExcelHandler handler = ExcelHandler.getInstance();
+            boolean synced = handler.sync(cache);
+            if (synced) {
+                cache.clear();
+            }
+        }
+    }
+
+    @Override
     public void onException(Exception exception, AnalysisContext context) {
         if (exception instanceof ExcelDataConvertException) {
             ExcelDataConvertException ex = (ExcelDataConvertException) exception;
