@@ -28,8 +28,3 @@ spring:
 logging:
   level:
     com.beikei.pro.easyexcel: debug
-
-mybatis-plus:
-  type-aliases-package: com.beikei.pro.easyexcel.transform
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

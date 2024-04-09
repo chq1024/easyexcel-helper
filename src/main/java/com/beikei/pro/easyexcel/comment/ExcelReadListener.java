@@ -18,11 +18,17 @@ public class ExcelReadListener implements ReadListener<Dict> {
 
     private final List<Dict> cache = new ArrayList<>(DEFAULT_CACHE_SIZE);
 
+    private final DbHelper dbHelper;
+
+    public ExcelReadListener(DbHelper dbHelper) {
+        this.dbHelper = dbHelper;
+    }
+
     @Override
     public void invoke(Dict data, AnalysisContext context) {
         cache.add(data);
         if (cache.size() >= DEFAULT_CACHE_SIZE) {
-            ExcelHandler handler = ExcelHandler.getInstance();
+            ExcelHandler handler = ExcelHandler.getInstance(dbHelper);
             boolean synced = handler.sync(cache);
             if (synced) {
                 cache.clear();
@@ -33,7 +39,7 @@ public class ExcelReadListener implements ReadListener<Dict> {
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
         if (!cache.isEmpty()) {
-            ExcelHandler handler = ExcelHandler.getInstance();
+            ExcelHandler handler = ExcelHandler.getInstance(dbHelper);
             boolean synced = handler.sync(cache);
             if (synced) {
                 cache.clear();

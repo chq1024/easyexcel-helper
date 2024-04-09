@@ -4,16 +4,14 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.read.builder.ExcelReaderBuilder;
 import com.alibaba.excel.write.metadata.WriteSheet;
-import com.beikei.pro.easyexcel.comment.Dict;
-import com.beikei.pro.easyexcel.comment.ExcelHandler;
-import com.beikei.pro.easyexcel.comment.ExcelReadListener;
+import com.beikei.pro.easyexcel.comment.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,21 +29,21 @@ public class ExcelHelper {
 
     private static ConcurrentHashMap<Class, Object> cacheHandleMap = new ConcurrentHashMap<>();
 
-    public static void read(MultipartFile file, String unqiueName) {
-        read0(file, unqiueName);
+    public static void read(MultipartFile file, String unqiueName,DbHelper dbHelper) {
+        read0(file, unqiueName,dbHelper);
     }
 
-    public static void write(File file, String unqiueName) {
-        write(file, unqiueName, null, null);
+    public static void write(File file, String unqiueName,DbHelper dbHelper) {
+        write(file, unqiueName,dbHelper, null, null);
     }
 
-    public static void write(File file, String uniqueName, @Nullable Dict queryWrapper, @Nullable Dict orderItems) {
-        write0(file, uniqueName, queryWrapper, orderItems);
+    public static void write(File file, String uniqueName, DbHelper dbHelper, @Nullable Dict queryWrapper, @Nullable Dict orderItems) {
+        write0(file, uniqueName,dbHelper, queryWrapper, orderItems);
     }
 
-    private static void read0(MultipartFile file, String unqiueName) {
+    private static void read0(MultipartFile file, String unqiueName,DbHelper dbHelper) {
         try {
-            ExcelReadListener listener = new ExcelReadListener();
+            ExcelReadListener listener = new ExcelReadListener(dbHelper);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), listener);
             read.sheet().doRead();
         } catch (Exception e) {
@@ -54,9 +52,19 @@ public class ExcelHelper {
         }
     }
 
-    private static void write0(File file, String unqiueName, @Nullable Dict queryWrapper, @Nullable Dict orderItems) {
-        try (ExcelWriter excelWriter = EasyExcel.write(file, Map.class).build()) {
-            ExcelHandler handler = ExcelHandler.getInstance();
+    private static void write0(File file, String unqiueName, DbHelper dbHelper,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
+        List<List<String>> heads = new ArrayList<>();
+        ArrayList<String> head0 = new ArrayList<>();
+        head0.add("id");
+        ArrayList<String> head1 = new ArrayList<>();
+        head1.add("gid");
+        ArrayList<String> head2 = new ArrayList<>();
+        head2.add("name");
+        heads.add(head0);
+        heads.add(head1);
+        heads.add(head2);
+        try (ExcelWriter excelWriter = EasyExcel.write(file).head(heads).build()) {
+            ExcelHandler handler = ExcelHandler.getInstance(dbHelper);
             long count = handler.count(queryWrapper);
             if (count > DEFAULT_SHEET_MAX_SIZE) {
                 long sheetNum = count % DEFAULT_BATCH_WRITE_MAX_SIZE > 0 ? count / DEFAULT_BATCH_WRITE_MAX_SIZE + 1 : count / DEFAULT_BATCH_WRITE_MAX_SIZE;
@@ -74,7 +82,7 @@ public class ExcelHelper {
             }
         } catch (Exception e) {
             log.error("======= write error!=========");
-            throw new RuntimeException(e.getMessage());
+            throw e;
         }
     }
 
