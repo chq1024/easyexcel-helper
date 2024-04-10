@@ -1,8 +1,10 @@
 package com.beikei.pro.easyexcel.handler.controller;
 
+import com.beikei.pro.easyexcel.comment.Const;
 import com.beikei.pro.easyexcel.comment.Dict;
 import com.beikei.pro.easyexcel.comment.ExcelHandler;
 import com.beikei.pro.easyexcel.handler.JdbcTemplateDbHelper;
+import com.beikei.pro.easyexcel.handler.properties.HelperProperties;
 import com.beikei.pro.easyexcel.util.ExcelHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,10 +28,13 @@ public class ExcelController {
     @Autowired
     private JdbcTemplateDbHelper dbHelper;
 
+    @Autowired
+    private HelperProperties properties;
+
 
     @PostMapping("/upload")
     public void upload(@RequestParam("file") MultipartFile file) {
-
+        ExcelHelper.read(file,"goods_excel",dbHelper);
     }
 
     @PostMapping("/download")
@@ -39,7 +44,7 @@ public class ExcelController {
             Path filepath = Files.createTempFile(Path.of("D:\\data\\excel"), "goods_" + random.nextInt(), ".xlsx");
             Dict queryWrapper = new Dict();
             queryWrapper.put("gid","lt",50);
-            queryWrapper.put("non_tb","goods_excel");
+            queryWrapper.put(properties.getIgnorePrefix() + Const.TB,"goods_excel");
             ExcelHelper.write(filepath.toFile(),"goods_excel",dbHelper,queryWrapper,null);
         } catch (IOException e) {
             throw new RuntimeException(e);

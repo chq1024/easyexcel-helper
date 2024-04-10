@@ -1,5 +1,6 @@
 package com.beikei.pro.easyexcel.handler;
 
+import com.beikei.pro.easyexcel.comment.Const;
 import com.beikei.pro.easyexcel.comment.DbHelper;
 import com.beikei.pro.easyexcel.comment.Dict;
 import com.beikei.pro.easyexcel.handler.properties.HelperProperties;
@@ -30,7 +31,7 @@ public class JdbcTemplateDbHelper extends DbHelper {
 
     @PostConstruct
     public void load() {
-        Dict schema = loadSchema("easyexcel_helper");
+        Dict schema = loadSchema(helperProperties.getDbName());
         String datumNon = helperProperties.getIgnorePrefix();
         super.setSchema(schema);
         super.setDatumNon(datumNon);
@@ -41,7 +42,7 @@ public class JdbcTemplateDbHelper extends DbHelper {
         Map<String, String> tbSqlMap = new HashMap<>();
         String datumNon = getDatumNon();
         for (Dict datum : data) {
-            String tbName = (String) datum.getOrDefault(datumNon + "tb", "");
+            String tbName = (String) datum.getOrDefault(datumNon + Const.TB, "");
             if (!StringUtils.hasText(tbName)) {
                 throw new RuntimeException("数据中必须包含tb字段");
             }
@@ -74,8 +75,8 @@ public class JdbcTemplateDbHelper extends DbHelper {
                 }
                 // 删除多余的','
                 keyBuilder.deleteCharAt(keyBuilder.length() - 1);
-                valueBuilder.deleteCharAt(keyBuilder.length() - 1);
-                sql = keyBuilder.append(")").append(" ").append(valueBuilder).toString();
+                valueBuilder.deleteCharAt(valueBuilder.length() - 1);
+                sql = keyBuilder.append(")").append(" ").append(valueBuilder).append(")").toString();
                 tbSqlMap.put(tbName, sql);
             }
             template.update(sql, params.toArray());

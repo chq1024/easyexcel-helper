@@ -7,6 +7,7 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import com.beikei.pro.easyexcel.comment.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.slf4j.MDC;
 import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +32,7 @@ public class ExcelHelper {
 
     private static ConcurrentHashMap<Class, Object> cacheHandleMap = new ConcurrentHashMap<>();
 
-    public static void read(MultipartFile file, String unqiueName,DbHelper dbHelper) {
+    public static void read(MultipartFile file,String unqiueName,DbHelper dbHelper) {
         read0(file, unqiueName,dbHelper);
     }
 
@@ -45,7 +46,7 @@ public class ExcelHelper {
 
     private static void read0(MultipartFile file, String unqiueName,DbHelper dbHelper) {
         try {
-            ExcelReadListener listener = new ExcelReadListener(dbHelper);
+            ExcelReadListener listener = new ExcelReadListener(unqiueName,dbHelper);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), listener);
             read.sheet().doRead();
         } catch (Exception e) {
