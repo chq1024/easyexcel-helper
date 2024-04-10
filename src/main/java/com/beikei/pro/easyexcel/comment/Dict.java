@@ -3,6 +3,7 @@ package com.beikei.pro.easyexcel.comment;
 import java.util.*;
 
 /**
+ * 支持三元map
  * @author bk
  */
 public class Dict extends HashMap<String,Object> {
@@ -28,11 +29,39 @@ public class Dict extends HashMap<String,Object> {
         return String.valueOf(this.get(key));
     }
 
-    public void put(String filed,String sign,Object value) {
-        checkSign(sign);
-        this.put(filed + "#" + sign, value);
+    public Dict getDict(String key) {
+        boolean contained = this.containsKey(key);
+        if (contained) {
+            Object val = this.get(key);
+            if (val instanceof Dict) {
+                return (Dict) val;
+            } else {
+                throw new RuntimeException("类型错误");
+            }
+        }
+        return new Dict();
     }
 
+    public Long getNum(String key) {
+        return Long.valueOf(getStr(key));
+    }
+
+    public void put(String preKey,String subKey,Object value) {
+        checkSign(subKey);
+        this.put(preKey + "#" + subKey, value);
+    }
+
+    public void putDict(String key,String cKey,Object cValue) {
+        Dict dict = this.getDict(key);
+        dict.put(cKey,cValue);
+        this.put(key,dict);
+    }
+
+    /**
+     * 针对符号位特殊定制
+     * @param key
+     * @return
+     */
     public String sign(String key) {
         boolean contains = key.contains("#");
         if (!contains) {
@@ -41,17 +70,13 @@ public class Dict extends HashMap<String,Object> {
         String symbol = key.split("#")[1];
         return SIGN_MAP.get(symbol);
     }
-
-    public String field(String key) {
+    /**
+     * 针对符号位特殊定制
+     * @param key
+     * @return
+     */
+    public String column(String key) {
         return key.split("#")[0];
-    }
-
-    public Long getNum(String filed,String sign) {
-        return Long.valueOf(String.valueOf(this.get(filed + "#" + sign)));
-    }
-
-    public String getStr(String filed,String sign) {
-        return String.valueOf(this.get(filed + "#" + sign));
     }
 
     private void checkSign(String sign) {

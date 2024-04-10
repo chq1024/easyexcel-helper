@@ -6,12 +6,14 @@ import com.alibaba.excel.read.builder.ExcelReaderBuilder;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.beikei.pro.easyexcel.comment.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -53,16 +55,8 @@ public class ExcelHelper {
     }
 
     private static void write0(File file, String unqiueName, DbHelper dbHelper,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
-        List<List<String>> heads = new ArrayList<>();
-        ArrayList<String> head0 = new ArrayList<>();
-        head0.add("id");
-        ArrayList<String> head1 = new ArrayList<>();
-        head1.add("gid");
-        ArrayList<String> head2 = new ArrayList<>();
-        head2.add("name");
-        heads.add(head0);
-        heads.add(head1);
-        heads.add(head2);
+        Dict schemaDict = dbHelper.getSchema().getDict(unqiueName);
+        List<List<String>> heads = schema2Header(schemaDict);
         try (ExcelWriter excelWriter = EasyExcel.write(file).head(heads).build()) {
             ExcelHandler handler = ExcelHandler.getInstance(dbHelper);
             long count = handler.count(queryWrapper);
@@ -74,11 +68,11 @@ public class ExcelHelper {
                     if (j == sheetNum) {
                         batch = count - (j - 1) * DEFAULT_SHEET_MAX_SIZE;
                     }
-                    sheetWrite(batch,excelWriter,writeSheet,handler,queryWrapper,orderItems);
+                    sheetWrite(schemaDict,batch,excelWriter,writeSheet,handler,queryWrapper,orderItems);
                 }
             } else {
                 WriteSheet writeSheet = EasyExcel.writerSheet("sheet_1").build();
-                sheetWrite(count,excelWriter,writeSheet,handler,queryWrapper,orderItems);
+                sheetWrite(schemaDict,count,excelWriter,writeSheet,handler,queryWrapper,orderItems);
             }
         } catch (Exception e) {
             log.error("======= write error!=========");
@@ -86,11 +80,36 @@ public class ExcelHelper {
         }
     }
 
-    private static void sheetWrite(long batch,ExcelWriter excelWriter,WriteSheet writeSheet,ExcelHandler handler,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
+    private static void sheetWrite(Dict schema,long batch,ExcelWriter excelWriter,WriteSheet writeSheet,ExcelHandler handler,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
         long times = batch % DEFAULT_BATCH_WRITE_MAX_SIZE > 0 ? (batch / DEFAULT_BATCH_WRITE_MAX_SIZE) + 1: batch / DEFAULT_BATCH_WRITE_MAX_SIZE;
         for (int i = 0; i < times; i++) {
             List<Dict> batchData = handler.batchQuery(i, DEFAULT_BATCH_WRITE_MAX_SIZE, queryWrapper, orderItems).get();
-            excelWriter.write(batchData, writeSheet);
+            List<List<Object>> cells = data2Cell(schema, batchData);
+            excelWriter.write(cells, writeSheet);
         }
+    }
+
+    private static List<List<String>> schema2Header(Dict schema) {
+        Set<String> columns = schema.keySet();
+        List<List<String>> heads = new ArrayList<>();
+        for (String column : columns) {
+            List<String> head = new ArrayList<>();
+            head.add(column);
+            heads.add(head);
+        }
+        return heads;
+    }
+
+    private static List<List<Object>> data2Cell(Dict schema,List<Dict> data) {
+        List<List<Object>> cells = new ArrayList<>();
+        Set<String> columns = schema.keySet();
+        for (Dict datum : data) {
+            List<Object> cell = new ArrayList<>();
+            for (String column : columns) {
+                cell.add(datum.get(column));
+            }
+            cells.add(cell);
+        }
+        return cells;
     }
 }

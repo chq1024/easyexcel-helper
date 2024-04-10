@@ -4,6 +4,7 @@ import com.beikei.pro.easyexcel.comment.Dict;
 import com.beikei.pro.easyexcel.comment.ExcelHandler;
 import com.beikei.pro.easyexcel.handler.JdbcTemplateDbHelper;
 import com.beikei.pro.easyexcel.util.ExcelHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,9 @@ import java.util.Random;
 @RequestMapping("/excel")
 public class ExcelController {
 
+    @Autowired
+    private JdbcTemplateDbHelper dbHelper;
+
 
     @PostMapping("/upload")
     public void upload(@RequestParam("file") MultipartFile file) {
@@ -36,7 +40,7 @@ public class ExcelController {
             Dict queryWrapper = new Dict();
             queryWrapper.put("gid","lt",50);
             queryWrapper.put("non_tb","goods_excel");
-            ExcelHelper.write(filepath.toFile(),"goods",new JdbcTemplateDbHelper(),queryWrapper,null);
+            ExcelHelper.write(filepath.toFile(),"goods_excel",dbHelper,queryWrapper,null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

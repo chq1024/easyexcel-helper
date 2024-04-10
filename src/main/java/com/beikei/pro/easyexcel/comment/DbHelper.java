@@ -1,5 +1,8 @@
 package com.beikei.pro.easyexcel.comment;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
 /**
@@ -9,7 +12,13 @@ import java.util.List;
  * 服务于excel表头和查询后数据的转化
  * @author bk
  */
+@Getter
+@Setter
 public abstract class DbHelper {
+
+    private Dict schema;
+
+    private String datumNon;
 
     public abstract void insert2db(List<Dict> data);
 
@@ -17,4 +26,7 @@ public abstract class DbHelper {
 
     public abstract List<Dict> batchQuery(long page, int size, Dict queryWrapper, Dict orderItems);
 
+    public abstract Dict loadSchema(String schema);
+
 }
+

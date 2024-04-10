@@ -28,3 +28,11 @@ spring:
 logging:
   level:
     com.beikei.pro.easyexcel: debug
+
+helper:
+  dbName: easyexcel_helper
+  ignore_prefix: non_
+  batch_write_max_size: 20
+  batch-sync-max-size: 10
+  enable-check: true
+  sheet-max-size: 100

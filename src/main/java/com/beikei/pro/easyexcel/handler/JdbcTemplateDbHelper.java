@@ -2,51 +2,75 @@ package com.beikei.pro.easyexcel.handler;
 
 import com.beikei.pro.easyexcel.comment.DbHelper;
 import com.beikei.pro.easyexcel.comment.Dict;
-import com.beikei.pro.easyexcel.util.SpringUtils;
+import com.beikei.pro.easyexcel.handler.properties.HelperProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 /**
  * jdbcTemplate 实现DbHelper
  * @author bk
  */
+@Configuration
+@Getter
 public class JdbcTemplateDbHelper extends DbHelper {
 
-    private final String DATUM_NON_PREFIX = "non_";
+
+    @Autowired
+    private HelperProperties helperProperties;
+    @Autowired
+    private JdbcTemplate template;
+
+    @PostConstruct
+    public void load() {
+        Dict schema = loadSchema("easyexcel_helper");
+        String datumNon = helperProperties.getIgnorePrefix();
+        super.setSchema(schema);
+        super.setDatumNon(datumNon);
+    }
 
     @Override
     public void insert2db(List<Dict> data) {
         Map<String, String> tbSqlMap = new HashMap<>();
-        JdbcTemplate template = SpringUtils.getBean(JdbcTemplate.class);
+        String datumNon = getDatumNon();
         for (Dict datum : data) {
-            String tbName = (String) datum.getOrDefault(DATUM_NON_PREFIX + "tb", "");
+            String tbName = (String) datum.getOrDefault(datumNon + "tb", "");
             if (!StringUtils.hasText(tbName)) {
                 throw new RuntimeException("数据中必须包含tb字段");
             }
             String sql = "";
-            List<String> params = new ArrayList<>();
+            List<Object> params = new ArrayList<>();
             if (tbSqlMap.containsKey(tbName)) {
                 sql = tbSqlMap.get(tbName);
                 datum.forEach((k, v) -> {
-                    if (!k.startsWith(DATUM_NON_PREFIX)) {
-                        params.add(String.valueOf(v));
+                    if (!k.startsWith(datumNon)) {
+                        params.add(v);
                     }
                 });
             } else {
                 StringBuilder keyBuilder = new StringBuilder("INSERT INTO " + tbName + "(");
                 StringBuilder valueBuilder = new StringBuilder("VALUES(");
+                Dict schemaDict = getSchema().getDict(tbName);
                 for (Map.Entry<String, Object> entry : datum.entrySet()) {
                     String key = entry.getKey();
-                    if (key.startsWith(DATUM_NON_PREFIX)) {
+                    if (key.startsWith(datumNon)) {
                         continue;
                     }
-                    params.add(String.valueOf(entry.getValue()));
-                    keyBuilder.append(key).append(",");
-                    valueBuilder.append("?").append(",");
+                    if (helperProperties.getEnableCheck() && !schemaDict.containsKey(key)) {
+                        throw new RuntimeException("表结构异常，需执行刷新接口同步表结构");
+                    }
+                    if (schemaDict.containsKey(key)) {
+                        params.add(entry.getValue());
+                        keyBuilder.append(key).append(",");
+                        valueBuilder.append("?").append(",");
+                    }
                 }
                 // 删除多余的','
                 keyBuilder.deleteCharAt(keyBuilder.length() - 1);
@@ -60,30 +84,30 @@ public class JdbcTemplateDbHelper extends DbHelper {
 
     @Override
     public long count(Dict queryWrapper) {
-        JdbcTemplate template = SpringUtils.getBean(JdbcTemplate.class);
-        boolean containsTb = queryWrapper.containsKey(DATUM_NON_PREFIX + "tb");
+        String datumNon = getDatumNon();
+        boolean containsTb = queryWrapper.containsKey(datumNon + "tb");
         if (!containsTb) {
             throw new RuntimeException("数据中必须包含tb字段");
         }
-        String tb = queryWrapper.getStr(DATUM_NON_PREFIX + "tb");
+        String tb = queryWrapper.getStr(datumNon + "tb");
         StringBuilder sqlBuilder = new StringBuilder("SELECT COUNT(*) FROM " + tb + " WHERE 1=1");
-        List<String> params = new ArrayList<>();
-        wrapper2builder(sqlBuilder, params, queryWrapper);
+        List<Object> params = new ArrayList<>();
+        wrapper2builder(tb,sqlBuilder, params, queryWrapper);
         String sql = sqlBuilder.toString();
         return Optional.ofNullable(template.queryForObject(sql, Long.class, params.toArray())).orElse(0L);
     }
 
     @Override
     public List<Dict> batchQuery(long page, int size, Dict queryWrapper, Dict orderItems) {
-        JdbcTemplate template = SpringUtils.getBean(JdbcTemplate.class);
-        boolean containsTb = queryWrapper.containsKey(DATUM_NON_PREFIX + "tb");
+        String datumNon = getDatumNon();
+        boolean containsTb = queryWrapper.containsKey(datumNon + "tb");
         if (!containsTb) {
             throw new RuntimeException("数据中必须包含tb字段");
         }
-        String tb = queryWrapper.getStr(DATUM_NON_PREFIX + "tb");
+        String tb = queryWrapper.getStr(datumNon + "tb");
         StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM " + tb + " WHERE 1=1");
-        List<String> params = new ArrayList<>();
-        wrapper2builder(sqlBuilder, params, queryWrapper);
+        List<Object> params = new ArrayList<>();
+        wrapper2builder(tb,sqlBuilder, params, queryWrapper);
         // 需要检测k,v安全性
         if (orderItems != null && !orderItems.isEmpty()) {
             sqlBuilder.append(" ORDER BY ");
@@ -97,18 +121,25 @@ public class JdbcTemplateDbHelper extends DbHelper {
         return maps2dicts(maps);
     }
 
-    private void wrapper2builder(StringBuilder builder, List<String> params, Dict queryWrapper) {
+    private void wrapper2builder(String tb,StringBuilder builder, List<Object> params, Dict queryWrapper) {
+        String datumNon = getDatumNon();
+        Dict schemaDict = getSchema().getDict(tb);
         for (Map.Entry<String, Object> entry : queryWrapper.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            if (key.startsWith(DATUM_NON_PREFIX)) {
+            if (key.startsWith(datumNon)) {
                 continue;
             }
             Dict dict = new Dict(key, value);
+            String column = dict.column(key);
             String symbol = dict.sign(key);
-            String field = dict.field(key);
-            builder.append(" AND ").append(field).append(symbol).append("?");
-            params.add(dict.getStr(key));
+            if (helperProperties.getEnableCheck() && !schemaDict.containsKey(dict.column(key))) {
+                throw new RuntimeException("表结构异常，需执行刷新接口同步表结构");
+            }
+            if (schemaDict.containsKey(column)) {
+                builder.append(" AND ").append(column).append(symbol).append("?");
+                params.add(dict.getStr(key));
+            }
         }
     }
 
@@ -127,5 +158,17 @@ public class JdbcTemplateDbHelper extends DbHelper {
         return dicts;
     }
 
-
+    public Dict loadSchema(String dbName) {
+        String schemaSql = "SELECT TABLE_NAME,COLUMN_NAME,DATA_TYPE FROM information_schema.columns WHERE TABLE_SCHEMA = ?";
+        Dict dict = new Dict();
+        Dict tempDict = dict;
+        template.query(schemaSql, (rs, rowNum) -> {
+            String tableName = rs.getString("TABLE_NAME");
+            String columnName = rs.getString("COLUMN_NAME");
+            String dataType = rs.getString("DATA_TYPE");
+            tempDict.putDict(tableName, columnName, dataType);
+            return tempDict;
+        }, dbName);
+        return dict;
+    }
 }

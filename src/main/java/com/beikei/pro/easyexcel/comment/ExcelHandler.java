@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  */
 public class ExcelHandler {
 
-    private final int DEFAULT_MAX_BATCH_SIZE = 10;
+    private final int DEFAULT_SYNC_MAX_BATCH_SIZE = 10;
 
     private volatile static ExcelHandler handler;
     private final DbHelper dbHelper;
@@ -38,7 +38,7 @@ public class ExcelHandler {
      * @return
      */
     public boolean sync(List<Dict> data) {
-        if (data.size() >= DEFAULT_MAX_BATCH_SIZE) {
+        if (data.size() >= DEFAULT_SYNC_MAX_BATCH_SIZE) {
             return async(data);
         } else {
             syncdb().accept(data);
@@ -54,12 +54,12 @@ public class ExcelHandler {
      */
     private boolean async(List<Dict> data) {
         int size = data.size();
-        int times = size % DEFAULT_MAX_BATCH_SIZE > 0 ? (size / DEFAULT_MAX_BATCH_SIZE) + 1 : size / DEFAULT_MAX_BATCH_SIZE;
+        int times = size % DEFAULT_SYNC_MAX_BATCH_SIZE > 0 ? (size / DEFAULT_SYNC_MAX_BATCH_SIZE) + 1 : size / DEFAULT_SYNC_MAX_BATCH_SIZE;
         ThreadPoolTaskExecutor pool = ThreadHelper.pool();
         CountDownLatch latch = new CountDownLatch(times);
         for (int i = 0; i < times; i++) {
-            int curr = i * DEFAULT_MAX_BATCH_SIZE;
-            int next = (i + 1) * DEFAULT_MAX_BATCH_SIZE;
+            int curr = i * DEFAULT_SYNC_MAX_BATCH_SIZE;
+            int next = (i + 1) * DEFAULT_SYNC_MAX_BATCH_SIZE;
             if (i + 1 == times) {
                 next = size;
             }
