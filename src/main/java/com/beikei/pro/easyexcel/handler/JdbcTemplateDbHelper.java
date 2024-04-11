@@ -160,13 +160,13 @@ public class JdbcTemplateDbHelper extends DbHelper {
     }
 
     public Dict loadSchema(String dbName) {
-        String schemaSql = "SELECT TABLE_NAME,COLUMN_NAME,DATA_TYPE FROM information_schema.columns WHERE TABLE_SCHEMA = ?";
+        String schemaSql = "SELECT TABLE_NAME,COLUMN_NAME,ORDINAL_POSITION FROM information_schema.columns WHERE TABLE_SCHEMA = ?";
         Dict dict = new Dict();
         Dict tempDict = dict;
         template.query(schemaSql, (rs, rowNum) -> {
             String tableName = rs.getString("TABLE_NAME");
             String columnName = rs.getString("COLUMN_NAME");
-            String dataType = rs.getString("DATA_TYPE");
+            String dataType = rs.getString("ORDINAL_POSITION");
             tempDict.putDict(tableName, columnName, dataType);
             return tempDict;
         }, dbName);
