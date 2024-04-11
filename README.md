@@ -4,7 +4,7 @@
 
 分支：  
 [v1-entity](https://github.com/chq1024/easyexcel-helper/tree/v1-entity)  需要用户自定义实体并实现监听类、处理类等   
-[v2-dynamic](https://github.com/chq1024/easyexcel-helper/tree/v2-dynamic)  全局map，无需用户自定义实体，有局限性，但相对自动化
+[v2-dynamic](https://github.com/chq1024/easyexcel-helper/tree/v2-dynamic)  全局map，无需用户自定义实体，有局限性，但相对自动化 **推荐**  
 
 目录介绍<br>
 1. comment: 抽象类或接口，具体处理逻辑的抽象
