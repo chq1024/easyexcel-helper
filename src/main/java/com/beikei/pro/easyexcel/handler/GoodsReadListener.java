@@ -16,13 +16,15 @@ import java.util.List;
 @Slf4j
 public class GoodsReadListener extends IReadListener<GoodsExcel> {
 
-    private static final int DEFAULT_CACHE_BATCH_SIZE = 20;
+    private static final int DEFAULT_CACHE_SIZE = 20;
 
     private static final int DEFAULT_SYNC_BATCH_SIZE = 10;
 
+    private static final int DEFAULT_THREAD_HANDLER_SIZE = 5;
+
 //    private List<GoodsExcel> cacheAnalysedData = ListUtils.newArrayListWithCapacity(100);
     // 复用该对象
-    private final List<GoodsExcel> cacheAnalysedData = new ArrayList<>(DEFAULT_CACHE_BATCH_SIZE);
+    private final List<GoodsExcel> cacheAnalysedData = new ArrayList<>(DEFAULT_CACHE_SIZE);
 
     private final IExcelHandler<GoodsExcel> excelHandler;
 
@@ -41,8 +43,8 @@ public class GoodsReadListener extends IReadListener<GoodsExcel> {
     @Override
     public void invoke(GoodsExcel data, AnalysisContext context) {
         cacheAnalysedData.add(data);
-        if (cacheAnalysedData.size() >= DEFAULT_CACHE_BATCH_SIZE) {
-            boolean batchSync = excelHandler.async(cacheAnalysedData,DEFAULT_SYNC_BATCH_SIZE);
+        if (cacheAnalysedData.size() >= DEFAULT_CACHE_SIZE) {
+            boolean batchSync = excelHandler.sync(cacheAnalysedData,DEFAULT_SYNC_BATCH_SIZE,DEFAULT_THREAD_HANDLER_SIZE);
             if (batchSync) {
 //                cacheAnalysedData = ListUtils.newArrayListWithCapacity(100);
                 cacheAnalysedData.clear();
@@ -58,7 +60,7 @@ public class GoodsReadListener extends IReadListener<GoodsExcel> {
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
         if (!cacheAnalysedData.isEmpty()) {
-            excelHandler.sync(cacheAnalysedData);
+            excelHandler.sync(cacheAnalysedData,DEFAULT_SYNC_BATCH_SIZE,DEFAULT_THREAD_HANDLER_SIZE);
         }
         log.info("========= curr finished read =========");
     }

@@ -65,7 +65,6 @@ public class GoodsExcelHandler implements IExcelHandler<GoodsExcel> {
         return ()->{
             Page<GoodsExcel> pageQuery = PageDTO.of(page, size);
             pageQuery.setOrders(Optional.ofNullable(orderItems).orElse(new ArrayList<>()));
-            // 外层已有查询总数，本次查询关注数据
             pageQuery.setSearchCount(false);
             pageQuery = goodsMapper.selectPage(pageQuery, queryWrapper);
             return pageQuery.getRecords();

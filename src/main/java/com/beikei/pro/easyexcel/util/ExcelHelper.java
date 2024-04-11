@@ -22,13 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * excel工具类，用于简单的read,write
  * 支持数据量较大时多sheet写入
+ *
  * @author bk
  */
 @SuppressWarnings("all")
 @Slf4j
 public class ExcelHelper {
 
-    private static int DEFAULT_PATE_SIZE = 20;
+    private static int DEFAULT_BATCH_WRITE_SIZE = 20;
 
     private static int DEFAULT_SHEET_SIZE_LIMIT = 100;
 
@@ -40,23 +41,23 @@ public class ExcelHelper {
     }
 
     public static void write(File file, String unqiueName) {
-        write(file, unqiueName, null, null);
+        write("sheet1", file, unqiueName, null, null);
     }
 
-    public static void write(File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper, @Nullable List<OrderItem> orderItems) {
-        ExcelEnum excelEnum = com.beikei.pro.easyexcel.enums.ExcelEnum.valueOfUniqueName(uniqueName);
-        write0("sheet1", file, excelEnum, queryWrapper, orderItems);
+    public static void write(String sheetName, File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper, @Nullable List<OrderItem> orderItems) {
+        ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
+        write0(sheetName, file, excelEnum, queryWrapper, orderItems);
     }
 
-    public static void write2Sheets(long sheetSize,File file,String uniqueName,@Nullable LambdaQueryWrapper queryWrapper, @Nullable List<OrderItem> orderItems) {
-        ExcelEnum excelEnum = com.beikei.pro.easyexcel.enums.ExcelEnum.valueOfUniqueName(uniqueName);
-        write0(sheetSize,file,excelEnum,queryWrapper,orderItems);
+    public static void write2Sheets(long sheetSize, File file, String uniqueName, @Nullable LambdaQueryWrapper queryWrapper, @Nullable List<OrderItem> orderItems) {
+        ExcelEnum excelEnum = ExcelEnum.valueOfUniqueName(uniqueName);
+        write0(sheetSize, file, excelEnum, queryWrapper, orderItems);
     }
 
     private static void read0(MultipartFile file, ExcelEnum excelEnum) {
         try {
-            IExcelHandler excelHandlerInstance = handlerSingerInstance(excelEnum.getHandler());
-            IReadListener listener = (IReadListener) excelEnum.getListener().getDeclaredConstructor(IExcelHandler.class).newInstance(excelHandlerInstance);
+            IExcelHandler handler = handlerSingerInstance(excelEnum.getHandler());
+            IReadListener listener = (IReadListener) excelEnum.getListener().getDeclaredConstructor(IExcelHandler.class).newInstance(handler);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), excelEnum.getTransform(), listener);
             read.sheet().doRead();
         } catch (Exception e) {
@@ -69,12 +70,9 @@ public class ExcelHelper {
         try (ExcelWriter excelWriter = EasyExcel.write(file, excelEnum.getTransform()).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet(sheetName).build();
             // 读取数据
-            IExcelHandler handlerInstance = handlerSingerInstance(excelEnum.getHandler());
-            long count = handlerInstance.count(queryWrapper);
-            long pageNum = count % DEFAULT_PATE_SIZE == 0 ? count / DEFAULT_PATE_SIZE : (count / DEFAULT_PATE_SIZE) + 1;
-            for (long i = 0; i < pageNum; i++) {
-                excelWriter.write(handlerInstance.pageQuery(i, DEFAULT_PATE_SIZE, queryWrapper, orderItems), writeSheet);
-            }
+            IExcelHandler handler = handlerSingerInstance(excelEnum.getHandler());
+            long count = handler.count(queryWrapper);
+            pageWrite0(count,excelWriter,writeSheet,handler,queryWrapper,orderItems);
         } catch (Exception e) {
             log.error("======= write error!=========");
             throw new RuntimeException(e.getMessage());
@@ -83,23 +81,27 @@ public class ExcelHelper {
 
     private static void write0(long sheetSize, File file, ExcelEnum excelEnum, @Nullable LambdaQueryWrapper queryWrapper, @Nullable List<OrderItem> orderItems) {
         try (ExcelWriter excelWriter = EasyExcel.write(file, excelEnum.getTransform()).build()) {
-            IExcelHandler handlerInstance = handlerSingerInstance(excelEnum.getHandler());
-            long count = handlerInstance.count(queryWrapper);
+            IExcelHandler handler = handlerSingerInstance(excelEnum.getHandler());
+            long count = handler.count(queryWrapper);
             long sheetNum = count % sheetSize == 0 ? count / sheetSize : (count / sheetSize) + 1;
             for (int i = 1; i <= sheetNum; i++) {
                 WriteSheet writeSheet = EasyExcel.writerSheet(i).build();
-                if (sheetSize <= DEFAULT_SHEET_SIZE_LIMIT) {
-                    excelWriter.write(handlerInstance.pageQuery(i, sheetSize, queryWrapper, orderItems), writeSheet);
+                if (sheetSize <= DEFAULT_BATCH_WRITE_SIZE) {
+                    excelWriter.write(handler.pageQuery(i, sheetSize, queryWrapper, orderItems), writeSheet);
                 } else {
-                    long pageNum = count % DEFAULT_PATE_SIZE == 0 ? count / DEFAULT_PATE_SIZE : (count / DEFAULT_PATE_SIZE) + 1;
-                    for (long j = 0; j < pageNum; j++) {
-                        excelWriter.write(handlerInstance.pageQuery(j, DEFAULT_PATE_SIZE, queryWrapper, orderItems), writeSheet);
-                    }
+                    pageWrite0(count,excelWriter,writeSheet,handler,queryWrapper,orderItems);
                 }
             }
         } catch (Exception e) {
             log.error("======= write error!=========");
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private static void pageWrite0(long count, ExcelWriter excelWriter, WriteSheet writeSheet, IExcelHandler handler, LambdaQueryWrapper queryWrapper, List<OrderItem> orderItems) {
+        long pageNum = count % DEFAULT_BATCH_WRITE_SIZE == 0 ? count / DEFAULT_BATCH_WRITE_SIZE : (count / DEFAULT_BATCH_WRITE_SIZE) + 1;
+        for (long j = 0; j < pageNum; j++) {
+            excelWriter.write(handler.pageQuery(j, DEFAULT_BATCH_WRITE_SIZE, queryWrapper, orderItems), writeSheet);
         }
     }
 
@@ -110,8 +112,8 @@ public class ExcelHelper {
                 Constructor constructor = excelHandler.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 Object nullFieldInstance = constructor.newInstance();
-                Method getInstance = excelHandler.getDeclaredMethod("getInstance");
-                IExcelHandler excelHandlerInstance = (IExcelHandler) getInstance.invoke(nullFieldInstance);
+                Method instance = excelHandler.getDeclaredMethod("getInstance");
+                IExcelHandler excelHandlerInstance = (IExcelHandler) instance.invoke(nullFieldInstance);
                 cacheHandleMap.put(excelHandler, excelHandlerInstance);
             } catch (Exception e) {
                 throw new RuntimeException(e);

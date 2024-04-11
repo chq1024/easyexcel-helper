@@ -42,8 +42,12 @@ public interface IExcelHandler<T> {
      * @param batch 本批次数据
      * @return
      */
-    default boolean sync(List<T> batch) {
-        sync2Db().accept(batch);
+    default boolean sync(List<T> batch,int syncMaxBatchSize,int threadHandleSize) {
+        if (batch.size() > syncMaxBatchSize ) {
+            async(batch,threadHandleSize);
+        } else {
+            sync2Db().accept(batch);
+        }
         return true;
     }
 
@@ -51,12 +55,12 @@ public interface IExcelHandler<T> {
      * 同步数据至DB （多线程）
      * 不保证顺序，并且，数据库中需要加入唯一索引
      * @param batch 本批次数据
-     * @param taskSize 每个线程处理的任务数据大小
+     * @param threadHandlerSize 每个线程处理的任务数据大小
      * @return
      */
-    default boolean async(List<T> batch,int taskSize) {
+    default boolean async(List<T> batch,int threadHandlerSize) {
         int size = batch.size();
-        int per = size % taskSize > 0 ? size / taskSize + 1 : size / taskSize;
+        int per = size % threadHandlerSize > 0 ? size / threadHandlerSize + 1 : size / threadHandlerSize;
         ThreadPoolTaskExecutor pool = ThreadHelper.pool();
 //        AtomicInteger inc = new AtomicInteger(0);
 //        List<CompletableFuture<Void>> tasks = new ArrayList<>();
@@ -83,12 +87,11 @@ public interface IExcelHandler<T> {
         for (int i = 1; i <= per; i++) {
             int count = i;
             pool.execute(()->{
-                int curr = (count- 1) * taskSize;
-                int next = count * taskSize;
+                int curr = (count- 1) * threadHandlerSize;
+                int next = count * threadHandlerSize;
                 if (count == per) {
                     next = batch.size();
                 }
-                System.out.println(Thread.currentThread().getName());
                 sync2Db().accept(batch.subList(curr, next));
                 latch.countDown();
             });
