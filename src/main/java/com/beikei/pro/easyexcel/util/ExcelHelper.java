@@ -32,21 +32,44 @@ public class ExcelHelper {
 
     private static ConcurrentHashMap<Class, Object> cacheHandleMap = new ConcurrentHashMap<>();
 
-    public static void read(MultipartFile file,String unqiueName,DbHelper dbHelper) {
-        read0(file, unqiueName,dbHelper);
+
+    /**
+     * excel->db
+     * 读取excel,并将数据存储进数据库
+     * @param file excel文件
+     * @param tbName  表名
+     * @param dbHelper orm实现类
+     */
+    public static void read(MultipartFile file,String tbName,DbHelper dbHelper) {
+        read0(file, tbName,dbHelper);
     }
 
-    public static void write(File file, String unqiueName,DbHelper dbHelper) {
-        write(file, unqiueName,dbHelper, null, null);
+    /**
+     * db->excel
+     * 读取db,并将数据转成excel
+     * @param file 写出文件
+     * @param tbName 表名
+     * @param dbHelper orm实现类
+     */
+    public static void write(File file, String tbName,DbHelper dbHelper) {
+        write(file, tbName,dbHelper, null, null);
     }
 
-    public static void write(File file, String uniqueName, DbHelper dbHelper, @Nullable Dict queryWrapper, @Nullable Dict orderItems) {
-        write0(file, uniqueName,dbHelper, queryWrapper, orderItems);
+    /**
+     * db->excel
+     * @param file 写出文件
+     * @param tbName 表名
+     * @param dbHelper orm实现类
+     * @param queryWrapper 查询条件，用于查询过滤
+     * @param orderItems 查询条件，用于排序
+     */
+    public static void write(File file, String tbName, DbHelper dbHelper, @Nullable Dict queryWrapper, @Nullable Dict orderItems) {
+        write0(file, tbName,dbHelper, queryWrapper, orderItems);
     }
 
-    private static void read0(MultipartFile file, String unqiueName,DbHelper dbHelper) {
+    private static void read0(MultipartFile file, String tbName,DbHelper dbHelper) {
         try {
-            ExcelReadListener listener = new ExcelReadListener(unqiueName,dbHelper);
+            ExcelReadListener listener = new ExcelReadListener(tbName,dbHelper);
             ExcelReaderBuilder read = EasyExcel.read(file.getInputStream(), listener);
             read.sheet().doRead();
         } catch (Exception e) {
@@ -55,9 +78,11 @@ public class ExcelHelper {
         }
     }
 
-    private static void write0(File file, String unqiueName, DbHelper dbHelper,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
-        Dict schemaDict = dbHelper.getSchema().getDict(unqiueName);
+    private static void write0(File file, String tbName, DbHelper dbHelper,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
+        Dict schemaDict = dbHelper.getSchema().getDict(tbName);
+        // 保持表结构head顺序输出
         String[] columns = sortColumns(schemaDict);
+        // 封装成easyexcel需要的表头
         List<List<String>> heads = schema2Header(columns);
         try (ExcelWriter excelWriter = EasyExcel.write(file).head(heads).build()) {
             ExcelHandler handler = ExcelHandler.getInstance(dbHelper);
@@ -82,6 +107,16 @@ public class ExcelHelper {
         }
     }
 
+    /**
+     * 单个sheet写入
+     * @param columns 列名
+     * @param batch 本批次数量
+     * @param excelWriter
+     * @param writeSheet
+     * @param handler
+     * @param queryWrapper
+     * @param orderItems
+     */
     private static void sheetWrite(String[] columns,long batch,ExcelWriter excelWriter,WriteSheet writeSheet,ExcelHandler handler,@Nullable Dict queryWrapper, @Nullable Dict orderItems) {
         long times = batch % DEFAULT_BATCH_WRITE_MAX_SIZE > 0 ? (batch / DEFAULT_BATCH_WRITE_MAX_SIZE) + 1: batch / DEFAULT_BATCH_WRITE_MAX_SIZE;
         for (int i = 0; i < times; i++) {

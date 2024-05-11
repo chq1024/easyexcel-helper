@@ -22,15 +22,16 @@ public class ExcelReadListener implements ReadListener<Map<Integer,String>> {
 
     private final List<Dict> cache = new ArrayList<>(DEFAULT_CACHE_SIZE);
 
+    // 存储excel结构 idx:name
     private final Map<Integer,String> columnIndexNameMap = new HashMap<>();
 
     private final DbHelper dbHelper;
 
-    private final String uniqueName;
+    private final String tbName;
 
-    public ExcelReadListener(String uniqueName,DbHelper dbHelper) {
+    public ExcelReadListener(String tbName,DbHelper dbHelper) {
         this.dbHelper = dbHelper;
-        this.uniqueName = uniqueName;
+        this.tbName = tbName;
     }
 
     @Override
@@ -78,6 +79,13 @@ public class ExcelReadListener implements ReadListener<Map<Integer,String>> {
         throw new RuntimeException(exception);
     }
 
+    /**
+     * 解析和返回以下信息，用于dbHelp的sql处理
+     * 字段名：字段值
+     * 固定值（表名key）:表名
+     * @param cellMap
+     * @return
+     */
     private Dict map2Dict(Map<Integer,String> cellMap) {
         Dict dict = new Dict();
         for (Map.Entry<Integer, String> entry : cellMap.entrySet()) {
@@ -86,7 +94,7 @@ public class ExcelReadListener implements ReadListener<Map<Integer,String>> {
             String columnName = columnIndexNameMap.get(idx);
             dict.put(columnName,cell);
         }
-        dict.put(dbHelper.getDatumNon() + Const.TB,uniqueName);
+        dict.put(dbHelper.getDatumNon() + Const.TB,tbName);
         return dict;
     }
 }

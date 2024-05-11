@@ -16,8 +16,10 @@ import java.util.List;
 @Setter
 public abstract class DbHelper {
 
+    // 表结构
     private Dict schema;
 
+    // 表名key前缀，用于程序中特殊识别
     private String datumNon;
 
     public abstract void insert2db(List<Dict> data);

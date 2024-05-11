@@ -22,3 +22,9 @@
 
 **可参考分支 [v1-entity](https://github.com/chq1024/easyexcel-helper) 实体实现方式，本项目旨在用map取代实体，不需要用户创建对象**
 
+### Demo演示：
+#### 1. 调用接口（POST）导出db数据成excel: localhost:20003/excel/download
+![img.png](img.png)![img_1.png](img_1.png)
+#### 2. 调用接口（POST）写入excel数据至db: localhost:20003/excel/upload (将刚生成的文件导入)
+![img_2.png](img_2.png)
+![img_3.png](img_3.png)
